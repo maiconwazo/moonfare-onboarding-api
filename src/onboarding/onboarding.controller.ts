@@ -1,38 +1,64 @@
-import { Metadata, ServerUnaryCall } from '@grpc/grpc-js';
-import { Controller, NotFoundException } from '@nestjs/common';
+import { Metadata } from '@grpc/grpc-js';
+import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
+import { Empty } from './google/protobuf/empty';
 import {
-  ExecuteRequest,
-  ExecuteResponse,
-  StartRequest,
-  StartResponse,
+  OnboardingRequest,
+  OnboardingResponse,
+  OnboardingServiceController,
 } from './onboarding';
+import { InstanceIdMissingException } from './onboarding.exceptions';
 import { OnboardingService } from './onboarding.service';
 
 @Controller()
-export class OnboardingController {
+export class OnboardingController implements OnboardingServiceController {
   constructor(private onboardingService: OnboardingService) {}
 
   @GrpcMethod('OnboardingService', 'Start')
   async start(
-    data: StartRequest,
-    metadata: Metadata,
-    call: ServerUnaryCall<any, any>,
-  ): Promise<StartResponse> {
+    request: Empty,
+    metadata?: Metadata,
+  ): Promise<OnboardingResponse> {
     const result = await this.onboardingService.start();
+    return result.toGrpcMessage();
+  }
+
+  @GrpcMethod('OnboardingService', 'Resume')
+  async resume(
+    request: OnboardingRequest,
+    metadata?: Metadata,
+  ): Promise<OnboardingResponse> {
+    const instanceId = metadata.toJSON().instanceid.toString();
+
+    if (!instanceId) throw new InstanceIdMissingException();
+
+    const result = await this.onboardingService.resume(instanceId);
     return result.toGrpcMessage();
   }
 
   @GrpcMethod('OnboardingService', 'Execute')
   async execute(
-    data: ExecuteRequest,
-    metadata: Metadata,
-    call: ServerUnaryCall<any, any>,
-  ): Promise<ExecuteResponse> {
-    const result = await this.onboardingService.execute(data.instanceId);
+    request: Empty,
+    metadata?: Metadata,
+  ): Promise<OnboardingResponse> {
+    const instanceId = metadata.toJSON().instanceid.toString();
 
-    if (!result) throw new NotFoundException('InstanceId was not found!');
+    if (!instanceId) throw new InstanceIdMissingException();
 
+    const result = await this.onboardingService.execute(instanceId);
+    return result.toGrpcMessage();
+  }
+
+  @GrpcMethod('OnboardingService', 'Delete')
+  async delete(
+    request: Empty,
+    metadata?: Metadata,
+  ): Promise<OnboardingResponse> {
+    const instanceId = metadata.toJSON().instanceid.toString();
+
+    if (!instanceId) throw new InstanceIdMissingException();
+
+    const result = await this.onboardingService.delete(instanceId);
     return result.toGrpcMessage();
   }
 }

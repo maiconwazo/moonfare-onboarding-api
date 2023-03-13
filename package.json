@@ -19,7 +19,7 @@
       "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
       "test:e2e": "jest --config ./test/jest-e2e.json",
       "typeorm": "typeorm-ts-node-commonjs",
-      "proto:generate": "for /D %J in (.\\src\\*) do for %I in (%~J\\*.proto) do protoc --plugin=protoc-gen-ts_proto=.\\node_modules\\.bin\\protoc-gen-ts_proto.cmd --proto_path=%~dpI. --ts_proto_out=%~dpI %~nxI"
+      "proto:generate": "for /D %J in (src\\*) do for %I in (%~J\\*.proto) do protoc --plugin=protoc-gen-ts_proto=.\\node_modules\\.bin\\protoc-gen-ts_proto.cmd --proto_path=%~dpI. --ts_proto_out=%~dpI %~nxI --ts_proto_opt=nestJs=true --ts_proto_opt=addGrpcMetadata=true"
    },
    "dependencies": {
       "@grpc/grpc-js": "^1.8.12",

@@ -1,3 +1,4 @@
+import { StepStatusEnum } from 'src/onboarding/entities/onboarding-instance-step.entity';
 import {
   MigrationInterface,
   QueryRunner,
@@ -66,6 +67,13 @@ export class CreateInstanceTable1678638299257 implements MigrationInterface {
         type: 'varchar',
         length: '36',
         isNullable: false,
+      },
+      {
+        name: 'status',
+        type: 'enum',
+        enum: [StepStatusEnum.pending, StepStatusEnum.completed],
+        default: `'${StepStatusEnum.pending}'`,
+        enumName: 'stepStatusEnum',
       },
       {
         name: 'createdAt',

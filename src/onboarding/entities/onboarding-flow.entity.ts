@@ -11,6 +11,9 @@ export class FlowEntity {
   public name: string;
 
   @Column()
+  public isDefault: boolean;
+
+  @Column()
   public createdAt: Date;
 
   @Column()

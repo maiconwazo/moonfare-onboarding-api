@@ -1,21 +1,25 @@
-import { Column, Entity, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { FlowStepEntity } from './onboarding-flow-step.entity';
-import { FlowEntity } from './onboarding-flow.entity';
 import { InstanceEntity } from './onboarding-instance.entity';
 
-@Entity('instance_step')
+export enum StepStatusEnum {
+  pending = 'pending',
+  completed = 'completed',
+}
+
+@Entity('instanceStep')
 export class InstanceStepEntity {
   @PrimaryGeneratedColumn('uuid')
   public id: string;
 
-  @PrimaryGeneratedColumn('uuid')
-  public instanceId: string;
-
-  @PrimaryGeneratedColumn('uuid')
-  public flowId: string;
-
-  @PrimaryGeneratedColumn('uuid')
-  public flowStepId: string;
+  @Column()
+  public status: StepStatusEnum;
 
   @Column()
   public createdAt: Date;
@@ -27,5 +31,9 @@ export class InstanceStepEntity {
   public instance: InstanceEntity;
 
   @ManyToOne(() => FlowStepEntity, (flowStep) => flowStep.instanceSteps)
+  @JoinColumn([
+    { name: 'flowId', referencedColumnName: 'flowId' },
+    { name: 'flowStepId', referencedColumnName: 'id' },
+  ])
   public flowStep: FlowStepEntity;
 }

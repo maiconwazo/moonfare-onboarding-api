@@ -8,9 +8,6 @@ export class InstanceEntity {
   @PrimaryGeneratedColumn('uuid')
   public id: string;
 
-  @PrimaryGeneratedColumn('uuid')
-  public flowId: string;
-
   @Column()
   public createdAt: Date;
 
@@ -20,6 +17,8 @@ export class InstanceEntity {
   @ManyToOne(() => FlowEntity, (flow) => flow.instances)
   public flow: FlowEntity;
 
-  @OneToMany(() => InstanceStepEntity, (step) => step.instance)
+  @OneToMany(() => InstanceStepEntity, (step) => step.instance, {
+    cascade: ['insert', 'update'],
+  })
   public steps: InstanceStepEntity[];
 }

@@ -1,9 +1,9 @@
 import { OnboardingResponse } from '../onboarding';
 
-export class ExecuteResponseDTO {
+export class ResumeResponseDTO {
   constructor(
     private instanceId: string,
-    private nextStep: string,
+    private currentStep: string,
     private isCompleted: boolean,
   ) {}
 
@@ -13,7 +13,7 @@ export class ExecuteResponseDTO {
       success: true,
       error: null,
       data: {
-        currentStep: this.nextStep,
+        currentStep: this.currentStep,
         isCompleted: this.isCompleted,
       },
     } as OnboardingResponse;

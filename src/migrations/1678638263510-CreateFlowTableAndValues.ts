@@ -22,6 +22,12 @@ export class CreateFlowTableAndValues1678638263510
         isNullable: false,
       },
       {
+        name: 'isDefault',
+        type: 'bool',
+        isNullable: false,
+        default: true,
+      },
+      {
         name: 'createdAt',
         type: 'datetime',
         isNullable: false,
@@ -93,9 +99,10 @@ export class CreateFlowTableAndValues1678638263510
     );
 
     const flowId = v4();
-    await queryRunner.query('insert into flow values (?, ?, now(), now())', [
+    await queryRunner.query('insert into flow values (?, ?, ?, now(), now())', [
       flowId,
       'Default',
+      true,
     ]);
 
     const steps = [
