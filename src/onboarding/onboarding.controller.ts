@@ -15,19 +15,13 @@ export class OnboardingController implements OnboardingServiceController {
   constructor(private onboardingService: OnboardingService) {}
 
   @GrpcMethod('OnboardingService', 'Start')
-  async start(
-    request: Empty,
-    metadata?: Metadata,
-  ): Promise<OnboardingResponse> {
+  async start(): Promise<OnboardingResponse> {
     const result = await this.onboardingService.start();
     return result.toGrpcMessage();
   }
 
   @GrpcMethod('OnboardingService', 'Resume')
-  async resume(
-    request: OnboardingRequest,
-    metadata?: Metadata,
-  ): Promise<OnboardingResponse> {
+  async resume(_: Empty, metadata?: Metadata): Promise<OnboardingResponse> {
     const instanceId = metadata.toJSON().instanceid.toString();
 
     if (!instanceId) throw new InstanceIdMissingException();
@@ -38,7 +32,7 @@ export class OnboardingController implements OnboardingServiceController {
 
   @GrpcMethod('OnboardingService', 'Execute')
   async execute(
-    request: Empty,
+    _: OnboardingRequest,
     metadata?: Metadata,
   ): Promise<OnboardingResponse> {
     const instanceId = metadata.toJSON().instanceid.toString();
@@ -50,10 +44,7 @@ export class OnboardingController implements OnboardingServiceController {
   }
 
   @GrpcMethod('OnboardingService', 'Delete')
-  async delete(
-    request: Empty,
-    metadata?: Metadata,
-  ): Promise<OnboardingResponse> {
+  async delete(_: Empty, metadata?: Metadata): Promise<OnboardingResponse> {
     const instanceId = metadata.toJSON().instanceid.toString();
 
     if (!instanceId) throw new InstanceIdMissingException();
