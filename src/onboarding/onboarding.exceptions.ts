@@ -3,7 +3,7 @@ import { RpcException } from '@nestjs/microservices';
 export class InstanceIdMissingException extends RpcException {
   constructor() {
     super({
-      code: 13,
+      code: 10,
       message: 'InstanceId missing.',
     });
   }

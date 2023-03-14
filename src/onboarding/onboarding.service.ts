@@ -16,6 +16,7 @@ import {
   RetrieveStepException,
 } from './onboarding.exceptions';
 import { FlowStepEntity } from './entities/onboarding-flow-step.entity';
+import { GetInformationResponseDTO } from './dto/get-information-response.dto';
 
 @Injectable()
 export class OnboardingService {
@@ -26,7 +27,7 @@ export class OnboardingService {
     private flowRepository: Repository<FlowEntity>,
   ) {}
 
-  async start(): Promise<StartResponseDTO> {
+  public async start(): Promise<StartResponseDTO> {
     const defaultFlow = await this.flowRepository.findOne({
       where: {
         isDefault: true,
@@ -55,10 +56,10 @@ export class OnboardingService {
     instance.steps = [instanceStep];
 
     this.instanceRepository.save(instance);
-    return new StartResponseDTO(instance.id, firstStep.name);
+    return new StartResponseDTO(instance.id, firstStep.name, firstStep.order);
   }
 
-  async resume(instanceId: string): Promise<ResumeResponseDTO> {
+  public async resume(instanceId: string): Promise<ResumeResponseDTO> {
     const instance = await this.instanceRepository.findOne({
       where: {
         id: instanceId,
@@ -81,18 +82,23 @@ export class OnboardingService {
         instance.id,
         pendingInstanceStep.flowStep.name,
         false,
+        pendingInstanceStep.flowStep.order,
       );
 
-    console.log(instance.steps);
     const nextFlowStep = this.getNextFlowStep(instance);
 
     if (nextFlowStep)
-      return new ResumeResponseDTO(instance.id, nextFlowStep.name, false);
+      return new ResumeResponseDTO(
+        instance.id,
+        nextFlowStep.name,
+        false,
+        nextFlowStep.order,
+      );
 
-    return new ResumeResponseDTO(instance.id, '', true);
+    return new ResumeResponseDTO(instance.id, '', true, -1);
   }
 
-  async execute(instanceId: string): Promise<ExecuteResponseDTO> {
+  public async execute(instanceId: string): Promise<ExecuteResponseDTO> {
     const instance = await this.instanceRepository.findOne({
       where: {
         id: instanceId,
@@ -125,16 +131,17 @@ export class OnboardingService {
       await this.instanceRepository.save(instance);
       return new ExecuteResponseDTO(
         instance.id,
-        newInstanceStep?.flowStep?.name,
+        newInstanceStep.flowStep.name,
         false,
+        newInstanceStep.flowStep.order,
       );
     } else {
       await this.instanceRepository.save(instance);
-      return new ExecuteResponseDTO(instance.id, '', true);
+      return new ExecuteResponseDTO(instance.id, '', true, -1);
     }
   }
 
-  async delete(instanceId: string): Promise<DeleteResponseDTO> {
+  public async delete(instanceId: string): Promise<DeleteResponseDTO> {
     const instance = await this.instanceRepository.findOne({
       where: {
         id: instanceId,
@@ -150,7 +157,21 @@ export class OnboardingService {
     return new DeleteResponseDTO();
   }
 
-  getPedingInstanceStep(instance: InstanceEntity): InstanceStepEntity {
+  public async getInformation() {
+    const defaultFlow = await this.flowRepository.findOne({
+      where: {
+        isDefault: true,
+      },
+      relations: {
+        steps: true,
+      },
+    });
+
+    if (!defaultFlow?.steps?.length) throw new RetrieveStepException();
+    return new GetInformationResponseDTO(defaultFlow.steps.length);
+  }
+
+  private getPedingInstanceStep(instance: InstanceEntity): InstanceStepEntity {
     const pendingInstanceStep = instance.steps.filter(
       (step) => step.status === StepStatusEnum.pending,
     )[0];
@@ -158,7 +179,7 @@ export class OnboardingService {
     return pendingInstanceStep;
   }
 
-  getNextFlowStep(instance: InstanceEntity): FlowStepEntity {
+  private getNextFlowStep(instance: InstanceEntity): FlowStepEntity {
     const sortedCompletedInstanceSteps = instance.steps
       .filter((step) => step.status === StepStatusEnum.completed)
       .sort((a, b) => a.flowStep.order - b.flowStep.order);

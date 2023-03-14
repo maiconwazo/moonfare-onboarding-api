@@ -1,7 +1,11 @@
 import { OnboardingResponse } from '../onboarding';
 
 export class StartResponseDTO {
-  constructor(private instanceId: string, private firstStep: string) {}
+  constructor(
+    private instanceId: string,
+    private firstStep: string,
+    private firstStepOrder: number,
+  ) {}
 
   toGrpcMessage() {
     return {
@@ -9,7 +13,10 @@ export class StartResponseDTO {
       success: true,
       error: null,
       data: {
-        currentStep: this.firstStep,
+        currentStep: {
+          name: this.firstStep,
+          order: this.firstStepOrder,
+        },
       },
     } as OnboardingResponse;
   }

@@ -5,6 +5,7 @@ export class ResumeResponseDTO {
     private instanceId: string,
     private currentStep: string,
     private isCompleted: boolean,
+    private currentStepOrder: number,
   ) {}
 
   toGrpcMessage() {
@@ -13,7 +14,10 @@ export class ResumeResponseDTO {
       success: true,
       error: null,
       data: {
-        currentStep: this.currentStep,
+        currentStep: {
+          name: this.currentStep,
+          order: this.currentStepOrder,
+        },
         isCompleted: this.isCompleted,
       },
     } as OnboardingResponse;

@@ -3,6 +3,7 @@ import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { Empty } from './google/protobuf/empty';
 import {
+  OnboardingInformationResponse,
   OnboardingRequest,
   OnboardingResponse,
   OnboardingServiceController,
@@ -24,7 +25,8 @@ export class OnboardingController implements OnboardingServiceController {
   async resume(_: Empty, metadata?: Metadata): Promise<OnboardingResponse> {
     const instanceId = metadata.toJSON().instanceid.toString();
 
-    if (!instanceId) throw new InstanceIdMissingException();
+    if (!instanceId || instanceId === 'undefined')
+      throw new InstanceIdMissingException();
 
     const result = await this.onboardingService.resume(instanceId);
     return result.toGrpcMessage();
@@ -37,7 +39,8 @@ export class OnboardingController implements OnboardingServiceController {
   ): Promise<OnboardingResponse> {
     const instanceId = metadata.toJSON().instanceid.toString();
 
-    if (!instanceId) throw new InstanceIdMissingException();
+    if (!instanceId || instanceId === 'undefined')
+      throw new InstanceIdMissingException();
 
     const result = await this.onboardingService.execute(instanceId);
     return result.toGrpcMessage();
@@ -47,9 +50,16 @@ export class OnboardingController implements OnboardingServiceController {
   async delete(_: Empty, metadata?: Metadata): Promise<OnboardingResponse> {
     const instanceId = metadata.toJSON().instanceid.toString();
 
-    if (!instanceId) throw new InstanceIdMissingException();
+    if (!instanceId || instanceId === 'undefined')
+      throw new InstanceIdMissingException();
 
     const result = await this.onboardingService.delete(instanceId);
+    return result.toGrpcMessage();
+  }
+
+  @GrpcMethod('OnboardingService', 'GetInformation')
+  async getInformation(): Promise<OnboardingInformationResponse> {
+    const result = await this.onboardingService.getInformation();
     return result.toGrpcMessage();
   }
 }

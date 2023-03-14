@@ -5,6 +5,7 @@ export class ExecuteResponseDTO {
     private instanceId: string,
     private nextStep: string,
     private isCompleted: boolean,
+    private nextStepOrder: number,
   ) {}
 
   toGrpcMessage() {
@@ -13,7 +14,10 @@ export class ExecuteResponseDTO {
       success: true,
       error: null,
       data: {
-        currentStep: this.nextStep,
+        currentStep: {
+          name: this.nextStep,
+          order: this.nextStepOrder,
+        },
         isCompleted: this.isCompleted,
       },
     } as OnboardingResponse;
