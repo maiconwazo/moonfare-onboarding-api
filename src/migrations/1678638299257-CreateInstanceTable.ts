@@ -71,8 +71,13 @@ export class CreateInstanceTable1678638299257 implements MigrationInterface {
       {
         name: 'status',
         type: 'enum',
-        enum: [StepStatusEnum.pending, StepStatusEnum.completed],
-        default: `'${StepStatusEnum.pending}'`,
+        enum: [
+          StepStatusEnum.started,
+          StepStatusEnum.processing,
+          StepStatusEnum.failed,
+          StepStatusEnum.completed,
+        ],
+        default: `'${StepStatusEnum.started}'`,
         enumName: 'stepStatusEnum',
       },
       {

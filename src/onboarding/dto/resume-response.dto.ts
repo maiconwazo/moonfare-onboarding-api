@@ -1,11 +1,13 @@
+import { StepStatusEnum } from '../entities/onboarding-instance-step.entity';
 import { OnboardingResponse } from '../onboarding';
 
 export class ResumeResponseDTO {
   constructor(
     private instanceId: string,
     private currentStep: string,
-    private isCompleted: boolean,
     private currentStepOrder: number,
+    private currentStepStatus: StepStatusEnum,
+    private isCompleted: boolean,
   ) {}
 
   toGrpcMessage() {
@@ -17,6 +19,7 @@ export class ResumeResponseDTO {
         currentStep: {
           name: this.currentStep,
           order: this.currentStepOrder,
+          status: this.currentStepStatus,
         },
         isCompleted: this.isCompleted,
       },

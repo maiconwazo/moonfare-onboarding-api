@@ -1,3 +1,4 @@
+import { StepStatusEnum } from '../entities/onboarding-instance-step.entity';
 import { OnboardingResponse } from '../onboarding';
 
 export class StartResponseDTO {
@@ -5,6 +6,7 @@ export class StartResponseDTO {
     private instanceId: string,
     private firstStep: string,
     private firstStepOrder: number,
+    private firstStepStatus: StepStatusEnum,
   ) {}
 
   toGrpcMessage() {
@@ -16,6 +18,7 @@ export class StartResponseDTO {
         currentStep: {
           name: this.firstStep,
           order: this.firstStepOrder,
+          status: this.firstStepStatus,
         },
       },
     } as OnboardingResponse;

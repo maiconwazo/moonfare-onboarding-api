@@ -109,8 +109,7 @@ export class CreateFlowTableAndValues1678638263510
       { name: 'identification', order: 1 },
       { name: 'consents', order: 2 },
       { name: 'document', order: 3 },
-      { name: 'result', order: 4 },
-      { name: 'password', order: 5 },
+      { name: 'password', order: 4 },
     ];
 
     steps.forEach(async (step) => {

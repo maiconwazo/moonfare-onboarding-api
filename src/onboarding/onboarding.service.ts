@@ -54,11 +54,16 @@ export class OnboardingService {
     instanceStep.id = v4();
     instanceStep.instance = instance;
     instanceStep.flowStep = firstStep;
-    instanceStep.status = StepStatusEnum.pending;
+    instanceStep.status = StepStatusEnum.started;
     instance.steps = [instanceStep];
 
     this.instanceRepository.save(instance);
-    return new StartResponseDTO(instance.id, firstStep.name, firstStep.order);
+    return new StartResponseDTO(
+      instance.id,
+      firstStep.name,
+      firstStep.order,
+      instanceStep.status,
+    );
   }
 
   public async resumeAsync(
@@ -81,25 +86,36 @@ export class OnboardingService {
     if (!instance) return this.start();
 
     const pendingInstanceStep = this.getPedingInstanceStep(instance);
-    if (pendingInstanceStep)
+    if (pendingInstanceStep) {
       return new ResumeResponseDTO(
         instance.id,
         pendingInstanceStep.flowStep.name,
-        false,
         pendingInstanceStep.flowStep.order,
+        pendingInstanceStep.status,
+        false,
       );
+    }
 
     const nextFlowStep = this.getNextFlowStep(instance);
+    if (nextFlowStep) {
+      const newInstanceStep = await this.startNextStep(instance, nextFlowStep);
 
-    if (nextFlowStep)
       return new ResumeResponseDTO(
         instance.id,
-        nextFlowStep.name,
+        newInstanceStep.flowStep.name,
+        newInstanceStep.flowStep.order,
+        newInstanceStep.status,
         false,
-        nextFlowStep.order,
       );
+    }
 
-    return new ResumeResponseDTO(instance.id, '', true, -1);
+    return new ResumeResponseDTO(
+      instance.id,
+      '',
+      -1,
+      StepStatusEnum.completed,
+      true,
+    );
   }
 
   public async executeAsync(
@@ -124,30 +140,63 @@ export class OnboardingService {
 
     const pendingInstanceStep = this.getPedingInstanceStep(instance);
     if (pendingInstanceStep) {
-      pendingInstanceStep.data = input;
-      pendingInstanceStep.status = StepStatusEnum.completed;
+      switch (pendingInstanceStep.flowStep.name) {
+        case 'document':
+          pendingInstanceStep.data = input;
+          pendingInstanceStep.status = StepStatusEnum.processing;
+          await this.instanceRepository.save(instance);
+          await this.clientRMQ.emit('validate_document', instanceId);
+
+          return new ExecuteResponseDTO(
+            instance.id,
+            pendingInstanceStep.flowStep.name,
+            pendingInstanceStep.flowStep.order,
+            pendingInstanceStep.status,
+            false,
+          );
+
+        default:
+          pendingInstanceStep.data = input;
+          pendingInstanceStep.status = StepStatusEnum.completed;
+          await this.instanceRepository.save(instance);
+      }
     }
 
     const nextFlowStep = this.getNextFlowStep(instance);
     if (nextFlowStep) {
-      const newInstanceStep = new InstanceStepEntity();
-      newInstanceStep.id = v4();
-      newInstanceStep.instance = instance;
-      newInstanceStep.flowStep = nextFlowStep;
-      newInstanceStep.status = StepStatusEnum.pending;
-      instance.steps.push(newInstanceStep);
+      const newInstanceStep = await this.startNextStep(instance, nextFlowStep);
 
-      await this.instanceRepository.save(instance);
       return new ExecuteResponseDTO(
         instance.id,
         newInstanceStep.flowStep.name,
-        false,
         newInstanceStep.flowStep.order,
+        newInstanceStep.status,
+        false,
       );
     } else {
-      await this.instanceRepository.save(instance);
-      return new ExecuteResponseDTO(instance.id, '', true, -1);
+      return new ExecuteResponseDTO(
+        instance.id,
+        '',
+        -1,
+        StepStatusEnum.completed,
+        true,
+      );
     }
+  }
+
+  private async startNextStep(
+    instance: InstanceEntity,
+    nextFlowStep: FlowStepEntity,
+  ) {
+    const newInstanceStep = new InstanceStepEntity();
+    newInstanceStep.id = v4();
+    newInstanceStep.instance = instance;
+    newInstanceStep.flowStep = nextFlowStep;
+    newInstanceStep.status = StepStatusEnum.started;
+    instance.steps.push(newInstanceStep);
+
+    await this.instanceRepository.save(instance);
+    return newInstanceStep;
   }
 
   public async deleteAsync(instanceId: string): Promise<DeleteResponseDTO> {
@@ -182,7 +231,10 @@ export class OnboardingService {
 
   private getPedingInstanceStep(instance: InstanceEntity): InstanceStepEntity {
     const pendingInstanceStep = instance.steps.filter(
-      (step) => step.status === StepStatusEnum.pending,
+      (step) =>
+        step.status === StepStatusEnum.started ||
+        step.status === StepStatusEnum.failed ||
+        step.status === StepStatusEnum.processing,
     )[0];
 
     return pendingInstanceStep;
