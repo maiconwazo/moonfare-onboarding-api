@@ -76,6 +76,13 @@ export class CreateInstanceTable1678638299257 implements MigrationInterface {
         enumName: 'stepStatusEnum',
       },
       {
+        name: 'data',
+        type: 'varchar',
+        length: '5000',
+        isPrimary: false,
+        isNullable: true,
+      },
+      {
         name: 'createdAt',
         type: 'datetime',
         isNullable: false,

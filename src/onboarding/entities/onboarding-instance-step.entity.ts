@@ -22,6 +22,9 @@ export class InstanceStepEntity {
   public status: StepStatusEnum;
 
   @Column()
+  public data: string;
+
+  @Column()
   public createdAt: Date;
 
   @Column()

@@ -28,13 +28,13 @@ export class OnboardingController implements OnboardingServiceController {
     if (!instanceId || instanceId === 'undefined')
       throw new InstanceIdMissingException();
 
-    const result = await this.onboardingService.resume(instanceId);
+    const result = await this.onboardingService.resumeAsync(instanceId);
     return result.toGrpcMessage();
   }
 
   @GrpcMethod('OnboardingService', 'Execute')
   async execute(
-    _: OnboardingRequest,
+    request: OnboardingRequest,
     metadata?: Metadata,
   ): Promise<OnboardingResponse> {
     const instanceId = metadata.toJSON().instanceid.toString();
@@ -42,7 +42,10 @@ export class OnboardingController implements OnboardingServiceController {
     if (!instanceId || instanceId === 'undefined')
       throw new InstanceIdMissingException();
 
-    const result = await this.onboardingService.execute(instanceId);
+    const result = await this.onboardingService.executeAsync(
+      instanceId,
+      request.input,
+    );
     return result.toGrpcMessage();
   }
 
@@ -53,7 +56,7 @@ export class OnboardingController implements OnboardingServiceController {
     if (!instanceId || instanceId === 'undefined')
       throw new InstanceIdMissingException();
 
-    const result = await this.onboardingService.delete(instanceId);
+    const result = await this.onboardingService.deleteAsync(instanceId);
     return result.toGrpcMessage();
   }
 

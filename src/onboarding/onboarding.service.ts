@@ -17,6 +17,7 @@ import {
 } from './onboarding.exceptions';
 import { FlowStepEntity } from './entities/onboarding-flow-step.entity';
 import { GetInformationResponseDTO } from './dto/get-information-response.dto';
+import { ClientRMQ } from '@nestjs/microservices';
 
 @Injectable()
 export class OnboardingService {
@@ -25,6 +26,7 @@ export class OnboardingService {
     private instanceRepository: Repository<InstanceEntity>,
     @Inject('FLOW_REPOSITORY')
     private flowRepository: Repository<FlowEntity>,
+    @Inject('DOCUMENT_SERVICE') private clientRMQ: ClientRMQ,
   ) {}
 
   public async start(): Promise<StartResponseDTO> {
@@ -59,7 +61,9 @@ export class OnboardingService {
     return new StartResponseDTO(instance.id, firstStep.name, firstStep.order);
   }
 
-  public async resume(instanceId: string): Promise<ResumeResponseDTO> {
+  public async resumeAsync(
+    instanceId: string,
+  ): Promise<ResumeResponseDTO | StartResponseDTO> {
     const instance = await this.instanceRepository.findOne({
       where: {
         id: instanceId,
@@ -74,7 +78,7 @@ export class OnboardingService {
       },
     });
 
-    if (!instance) throw new InstanceNotFoundException();
+    if (!instance) return this.start();
 
     const pendingInstanceStep = this.getPedingInstanceStep(instance);
     if (pendingInstanceStep)
@@ -98,7 +102,10 @@ export class OnboardingService {
     return new ResumeResponseDTO(instance.id, '', true, -1);
   }
 
-  public async execute(instanceId: string): Promise<ExecuteResponseDTO> {
+  public async executeAsync(
+    instanceId: string,
+    input: string,
+  ): Promise<ExecuteResponseDTO> {
     const instance = await this.instanceRepository.findOne({
       where: {
         id: instanceId,
@@ -116,8 +123,10 @@ export class OnboardingService {
     if (!instance) throw new InstanceNotFoundException();
 
     const pendingInstanceStep = this.getPedingInstanceStep(instance);
-    if (pendingInstanceStep)
+    if (pendingInstanceStep) {
+      pendingInstanceStep.data = input;
       pendingInstanceStep.status = StepStatusEnum.completed;
+    }
 
     const nextFlowStep = this.getNextFlowStep(instance);
     if (nextFlowStep) {
@@ -141,7 +150,7 @@ export class OnboardingService {
     }
   }
 
-  public async delete(instanceId: string): Promise<DeleteResponseDTO> {
+  public async deleteAsync(instanceId: string): Promise<DeleteResponseDTO> {
     const instance = await this.instanceRepository.findOne({
       where: {
         id: instanceId,
