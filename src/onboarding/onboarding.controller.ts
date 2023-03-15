@@ -49,6 +49,17 @@ export class OnboardingController implements OnboardingServiceController {
     return result.toGrpcMessage();
   }
 
+  @GrpcMethod('OnboardingService', 'Rollback')
+  async rollback(_: Empty, metadata?: Metadata): Promise<OnboardingResponse> {
+    const instanceId = metadata.toJSON().instanceid.toString();
+
+    if (!instanceId || instanceId === 'undefined')
+      throw new InstanceIdMissingException();
+
+    const result = await this.onboardingService.rollbackAsync(instanceId);
+    return result.toGrpcMessage();
+  }
+
   @GrpcMethod('OnboardingService', 'Delete')
   async delete(_: Empty, metadata?: Metadata): Promise<OnboardingResponse> {
     const instanceId = metadata.toJSON().instanceid.toString();

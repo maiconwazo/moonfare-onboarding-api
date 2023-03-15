@@ -32,7 +32,12 @@ export class InstanceStepEntity {
   @Column()
   public updatedAt: Date;
 
-  @ManyToOne(() => InstanceEntity, (instance) => instance.steps)
+  @ManyToOne(() => InstanceEntity, (instance) => instance.steps, {
+    onDelete: 'CASCADE',
+    onUpdate: 'RESTRICT',
+    orphanedRowAction: 'delete',
+  })
+  @JoinColumn([{ name: 'instanceId', referencedColumnName: 'id' }])
   public instance: InstanceEntity;
 
   @ManyToOne(() => FlowStepEntity, (flowStep) => flowStep.instanceSteps)

@@ -184,6 +184,48 @@ export class OnboardingService {
     }
   }
 
+  public async rollbackAsync(instanceId: string): Promise<ResumeResponseDTO> {
+    const instance = await this.instanceRepository.findOne({
+      where: {
+        id: instanceId,
+      },
+      relations: {
+        steps: {
+          flowStep: true,
+        },
+        flow: {
+          steps: true,
+        },
+      },
+    });
+
+    if (!instance) throw new InstanceNotFoundException();
+
+    const pendingInstanceStep = this.getPedingInstanceStep(instance);
+
+    instance.steps = instance.steps.filter(
+      (s) => s.id !== pendingInstanceStep.id,
+    );
+
+    const sortedCompletedInstanceSteps = instance.steps
+      .filter((step) => step.status === StepStatusEnum.completed)
+      .sort((a, b) => a.flowStep.order - b.flowStep.order);
+
+    const lastStep =
+      sortedCompletedInstanceSteps[sortedCompletedInstanceSteps.length - 1];
+    lastStep.status = StepStatusEnum.started;
+
+    await this.instanceRepository.save(instance);
+
+    return new ResumeResponseDTO(
+      instanceId,
+      lastStep.flowStep.name,
+      lastStep.flowStep.order,
+      lastStep.status,
+      false,
+    );
+  }
+
   private async startNextStep(
     instance: InstanceEntity,
     nextFlowStep: FlowStepEntity,
