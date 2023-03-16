@@ -3,12 +3,12 @@ import { OnboardingResponse } from '../onboarding';
 
 export class ResumeResponseDTO {
   constructor(
-    private instanceId: string,
-    private currentStep: string,
-    private currentStepOrder: number,
-    private currentStepStatus: StepStatusEnum,
-    private isCompleted: boolean,
-    private extraData: string,
+    public instanceId: string,
+    public currentStep: string,
+    public currentStepOrder: number,
+    public currentStepStatus: StepStatusEnum,
+    public isCompleted: boolean,
+    public extraData: string,
   ) {}
 
   toGrpcMessage() {

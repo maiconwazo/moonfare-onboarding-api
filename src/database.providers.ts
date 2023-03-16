@@ -1,4 +1,4 @@
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { getDataSourceToken } from '@nestjs/typeorm';
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
 import { createDatabase } from 'typeorm-extension';
@@ -8,13 +8,8 @@ config();
 
 export const databaseProviders = [
   {
-    provide: 'DATA_SOURCE',
-    imports: [ConfigModule],
-    inject: [ConfigService],
+    provide: getDataSourceToken(),
     useFactory: async () => {
-      // if (process.env.NODE_ENV === 'development')
-      //   await dropDatabase({ options: dataSourceOptions });
-
       await createDatabase({ options: dataSourceOptions });
       const dataSource = new DataSource(dataSourceOptions);
       await dataSource.initialize();

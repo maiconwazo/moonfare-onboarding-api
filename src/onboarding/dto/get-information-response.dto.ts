@@ -1,7 +1,7 @@
 import { OnboardingInformationResponse } from '../onboarding';
 
 export class GetInformationResponseDTO {
-  constructor(private totalStepCount: number) {}
+  constructor(public totalStepCount: number) {}
 
   toGrpcMessage() {
     return {

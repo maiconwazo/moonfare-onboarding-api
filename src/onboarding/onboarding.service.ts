@@ -19,17 +19,32 @@ import { FlowStepEntity } from './entities/onboarding-flow-step.entity';
 import { GetInformationResponseDTO } from './dto/get-information-response.dto';
 import { ClientRMQ } from '@nestjs/microservices';
 import { genSalt, hash } from 'bcrypt';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class OnboardingService {
   constructor(
-    @Inject('INSTANCE_REPOSITORY')
+    @InjectRepository(InstanceEntity)
     private instanceRepository: Repository<InstanceEntity>,
-    @Inject('FLOW_REPOSITORY')
-    private flowRepository: Repository<FlowEntity>,
+    @InjectRepository(FlowEntity)
+    public flowRepository: Repository<FlowEntity>,
     @Inject('DOCUMENT_SERVICE') private documentsServiceClient: ClientRMQ,
     @Inject('USER_SERVICE') private usersServiceClient: ClientRMQ,
   ) {}
+
+  public async getInformationAsync(): Promise<GetInformationResponseDTO> {
+    const defaultFlow = await this.flowRepository.findOne({
+      where: {
+        isDefault: true,
+      },
+      relations: {
+        steps: true,
+      },
+    });
+
+    if (!defaultFlow?.steps?.length) throw new RetrieveStepException();
+    return new GetInformationResponseDTO(defaultFlow.steps.length);
+  }
 
   public async startAsync(): Promise<StartResponseDTO> {
     const defaultFlow = await this.flowRepository.findOne({
@@ -180,8 +195,6 @@ export class OnboardingService {
           );
 
           const body = JSON.parse(pendingInstanceStep.data);
-          console.log(body.accessCode);
-          console.log(result);
           await this.usersServiceClient.emit('create_user', {
             accessCode: body.accessCode,
             hash: result,
@@ -264,22 +277,6 @@ export class OnboardingService {
     );
   }
 
-  private async startNextStep(
-    instance: InstanceEntity,
-    nextFlowStep: FlowStepEntity,
-  ) {
-    const newInstanceStep = new InstanceStepEntity();
-    newInstanceStep.id = v4();
-    newInstanceStep.instance = instance;
-    newInstanceStep.flowStep = nextFlowStep;
-    newInstanceStep.status = StepStatusEnum.started;
-    newInstanceStep.data = this.generateBody(nextFlowStep);
-    instance.steps.push(newInstanceStep);
-
-    await this.instanceRepository.save(instance);
-    return newInstanceStep;
-  }
-
   public async deleteAsync(instanceId: string): Promise<DeleteResponseDTO> {
     const instance = await this.instanceRepository.findOne({
       where: {
@@ -296,29 +293,25 @@ export class OnboardingService {
     return new DeleteResponseDTO();
   }
 
-  public async getInformationAsync() {
-    const defaultFlow = await this.flowRepository.findOne({
-      where: {
-        isDefault: true,
-      },
-      relations: {
-        steps: true,
-      },
-    });
+  private generateAccessCode() {
+    const length = 8;
 
-    if (!defaultFlow?.steps?.length) throw new RetrieveStepException();
-    return new GetInformationResponseDTO(defaultFlow.steps.length);
+    let accesscode = '';
+    for (let i = 0; i < length; i++) {
+      const n = Math.floor(Math.random() * 9);
+      accesscode += n.toString();
+    }
+
+    return accesscode;
   }
 
-  private getPedingInstanceStep(instance: InstanceEntity): InstanceStepEntity {
-    const pendingInstanceStep = instance.steps.filter(
-      (step) =>
-        step.status === StepStatusEnum.started ||
-        step.status === StepStatusEnum.failed ||
-        step.status === StepStatusEnum.processing,
-    )[0];
-
-    return pendingInstanceStep;
+  private generateBody(flowStep: FlowStepEntity) {
+    switch (flowStep.name) {
+      case 'password':
+        return JSON.stringify({ accessCode: this.generateAccessCode() });
+      default:
+        return JSON.stringify({});
+    }
   }
 
   private getNextFlowStep(instance: InstanceEntity): FlowStepEntity {
@@ -338,24 +331,30 @@ export class OnboardingService {
     );
   }
 
-  private generateBody(flowStep: FlowStepEntity) {
-    switch (flowStep.name) {
-      case 'password':
-        return JSON.stringify({ accessCode: this.generateAccessCode() });
-      default:
-        return JSON.stringify({});
-    }
+  private getPedingInstanceStep(instance: InstanceEntity): InstanceStepEntity {
+    const pendingInstanceStep = instance.steps.filter(
+      (step) =>
+        step.status === StepStatusEnum.started ||
+        step.status === StepStatusEnum.failed ||
+        step.status === StepStatusEnum.processing,
+    )[0];
+
+    return pendingInstanceStep;
   }
 
-  private generateAccessCode() {
-    const length = 8;
+  private async startNextStep(
+    instance: InstanceEntity,
+    nextFlowStep: FlowStepEntity,
+  ) {
+    const newInstanceStep = new InstanceStepEntity();
+    newInstanceStep.id = v4();
+    newInstanceStep.instance = instance;
+    newInstanceStep.flowStep = nextFlowStep;
+    newInstanceStep.status = StepStatusEnum.started;
+    newInstanceStep.data = this.generateBody(nextFlowStep);
+    instance.steps.push(newInstanceStep);
 
-    let accesscode = '';
-    for (let i = 0; i < length; i++) {
-      const n = Math.floor(Math.random() * 9);
-      accesscode += n.toString();
-    }
-
-    return accesscode;
+    await this.instanceRepository.save(instance);
+    return newInstanceStep;
   }
 }

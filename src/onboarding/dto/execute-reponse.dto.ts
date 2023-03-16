@@ -3,11 +3,11 @@ import { OnboardingResponse } from '../onboarding';
 
 export class ExecuteResponseDTO {
   constructor(
-    private instanceId: string,
-    private nextStep: string,
-    private nextStepOrder: number,
-    private nextStepStatus: StepStatusEnum,
-    private isCompleted: boolean,
+    public instanceId: string,
+    public nextStep: string,
+    public nextStepOrder: number,
+    public nextStepStatus: StepStatusEnum,
+    public isCompleted: boolean,
   ) {}
 
   toGrpcMessage() {

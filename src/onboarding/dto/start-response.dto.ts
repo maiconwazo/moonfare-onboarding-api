@@ -3,10 +3,10 @@ import { OnboardingResponse } from '../onboarding';
 
 export class StartResponseDTO {
   constructor(
-    private instanceId: string,
-    private firstStep: string,
-    private firstStepOrder: number,
-    private firstStepStatus: StepStatusEnum,
+    public instanceId: string,
+    public firstStep: string,
+    public firstStepOrder: number,
+    public firstStepStatus: StepStatusEnum,
   ) {}
 
   toGrpcMessage() {

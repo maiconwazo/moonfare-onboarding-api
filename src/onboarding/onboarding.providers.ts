@@ -1,18 +1,19 @@
+import { getRepositoryToken, getDataSourceToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { FlowEntity } from './entities/onboarding-flow.entity';
 import { InstanceEntity } from './entities/onboarding-instance.entity';
 
 export const onboardingProviders = [
   {
-    provide: 'FLOW_REPOSITORY',
+    provide: getRepositoryToken(FlowEntity),
     useFactory: (dataSource: DataSource) =>
       dataSource.getRepository(FlowEntity),
-    inject: ['DATA_SOURCE'],
+    inject: [getDataSourceToken()],
   },
   {
-    provide: 'INSTANCE_REPOSITORY',
+    provide: getRepositoryToken(InstanceEntity),
     useFactory: (dataSource: DataSource) =>
       dataSource.getRepository(InstanceEntity),
-    inject: ['DATA_SOURCE'],
+    inject: [getDataSourceToken()],
   },
 ];
