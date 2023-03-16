@@ -12,7 +12,7 @@ async function bootstrap() {
       options: {
         package: 'onboarding',
         protoPath: join(__dirname, 'onboarding/onboarding.proto'),
-        url: process.env.ONBOARDING_API_ENDPOINT,
+        url: `${process.env.ONBOARDING_API_HOST}:${process.env.ONBOARDING_API_PORT}`,
       },
     });
   await microservice.listen();

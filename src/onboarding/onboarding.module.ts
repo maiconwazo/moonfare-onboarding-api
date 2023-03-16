@@ -13,7 +13,11 @@ import { OnboardingService } from './onboarding.service';
         name: 'DOCUMENT_SERVICE',
         transport: Transport.RMQ,
         options: {
-          urls: ['amqp://localhost:5672'],
+          urls: [
+            `amqp://${process.env.RABBITMQ_HOST}:${parseInt(
+              process.env.RABBITMQ_PORT,
+            )}`,
+          ],
           queue: 'documents_queue',
           queueOptions: {
             durable: false,
@@ -24,7 +28,11 @@ import { OnboardingService } from './onboarding.service';
         name: 'USER_SERVICE',
         transport: Transport.RMQ,
         options: {
-          urls: ['amqp://localhost:5672'],
+          urls: [
+            `amqp://${process.env.RABBITMQ_HOST}:${parseInt(
+              process.env.RABBITMQ_PORT,
+            )}`,
+          ],
           queue: 'users_queue',
           queueOptions: {
             durable: false,

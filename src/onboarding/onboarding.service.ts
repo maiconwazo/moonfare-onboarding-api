@@ -166,6 +166,7 @@ export class OnboardingService {
           pendingInstanceStep.data = input;
           pendingInstanceStep.status = StepStatusEnum.processing;
           await this.instanceRepository.save(instance);
+
           await this.documentsServiceClient.emit(
             'validate_document',
             instanceId,
