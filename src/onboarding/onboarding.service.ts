@@ -18,6 +18,7 @@ import {
 import { FlowStepEntity } from './entities/onboarding-flow-step.entity';
 import { GetInformationResponseDTO } from './dto/get-information-response.dto';
 import { ClientRMQ } from '@nestjs/microservices';
+import { genSalt, hash } from 'bcrypt';
 
 @Injectable()
 export class OnboardingService {
@@ -26,10 +27,11 @@ export class OnboardingService {
     private instanceRepository: Repository<InstanceEntity>,
     @Inject('FLOW_REPOSITORY')
     private flowRepository: Repository<FlowEntity>,
-    @Inject('DOCUMENT_SERVICE') private clientRMQ: ClientRMQ,
+    @Inject('DOCUMENT_SERVICE') private documentsServiceClient: ClientRMQ,
+    @Inject('USER_SERVICE') private usersServiceClient: ClientRMQ,
   ) {}
 
-  public async start(): Promise<StartResponseDTO> {
+  public async startAsync(): Promise<StartResponseDTO> {
     const defaultFlow = await this.flowRepository.findOne({
       where: {
         isDefault: true,
@@ -83,7 +85,7 @@ export class OnboardingService {
       },
     });
 
-    if (!instance) return this.start();
+    if (!instance) return this.startAsync();
 
     const pendingInstanceStep = this.getPedingInstanceStep(instance);
     if (pendingInstanceStep) {
@@ -93,6 +95,7 @@ export class OnboardingService {
         pendingInstanceStep.flowStep.order,
         pendingInstanceStep.status,
         false,
+        pendingInstanceStep.data,
       );
     }
 
@@ -106,6 +109,7 @@ export class OnboardingService {
         newInstanceStep.flowStep.order,
         newInstanceStep.status,
         false,
+        newInstanceStep.data,
       );
     }
 
@@ -115,6 +119,7 @@ export class OnboardingService {
       -1,
       StepStatusEnum.completed,
       true,
+      '{}',
     );
   }
 
@@ -145,7 +150,10 @@ export class OnboardingService {
           pendingInstanceStep.data = input;
           pendingInstanceStep.status = StepStatusEnum.processing;
           await this.instanceRepository.save(instance);
-          await this.clientRMQ.emit('validate_document', instanceId);
+          await this.documentsServiceClient.emit(
+            'validate_document',
+            instanceId,
+          );
 
           return new ExecuteResponseDTO(
             instance.id,
@@ -154,6 +162,35 @@ export class OnboardingService {
             pendingInstanceStep.status,
             false,
           );
+
+        case 'password': {
+          const saltRounds = 10;
+          const json = JSON.parse(input);
+          const result = await new Promise((resolve, reject) =>
+            genSalt(saltRounds, function (err, salt) {
+              hash(json.password, salt, function (err, hash) {
+                if (err) {
+                  reject(err);
+                  return;
+                }
+
+                resolve(hash);
+              });
+            }),
+          );
+
+          const body = JSON.parse(pendingInstanceStep.data);
+          console.log(body.accessCode);
+          console.log(result);
+          await this.usersServiceClient.emit('create_user', {
+            accessCode: body.accessCode,
+            hash: result,
+          });
+          pendingInstanceStep.data = JSON.stringify({});
+          pendingInstanceStep.status = StepStatusEnum.completed;
+          await this.instanceRepository.save(instance);
+          break;
+        }
 
         default:
           pendingInstanceStep.data = input;
@@ -223,6 +260,7 @@ export class OnboardingService {
       lastStep.flowStep.order,
       lastStep.status,
       false,
+      lastStep.data,
     );
   }
 
@@ -235,6 +273,7 @@ export class OnboardingService {
     newInstanceStep.instance = instance;
     newInstanceStep.flowStep = nextFlowStep;
     newInstanceStep.status = StepStatusEnum.started;
+    newInstanceStep.data = this.generateBody(nextFlowStep);
     instance.steps.push(newInstanceStep);
 
     await this.instanceRepository.save(instance);
@@ -257,7 +296,7 @@ export class OnboardingService {
     return new DeleteResponseDTO();
   }
 
-  public async getInformation() {
+  public async getInformationAsync() {
     const defaultFlow = await this.flowRepository.findOne({
       where: {
         isDefault: true,
@@ -297,5 +336,26 @@ export class OnboardingService {
     return sortedFlowSteps.find(
       (step) => step.order > lastCompletedStep.flowStep.order ?? -1,
     );
+  }
+
+  private generateBody(flowStep: FlowStepEntity) {
+    switch (flowStep.name) {
+      case 'password':
+        return JSON.stringify({ accessCode: this.generateAccessCode() });
+      default:
+        return JSON.stringify({});
+    }
+  }
+
+  private generateAccessCode() {
+    const length = 8;
+
+    let accesscode = '';
+    for (let i = 0; i < length; i++) {
+      const n = Math.floor(Math.random() * 9);
+      accesscode += n.toString();
+    }
+
+    return accesscode;
   }
 }

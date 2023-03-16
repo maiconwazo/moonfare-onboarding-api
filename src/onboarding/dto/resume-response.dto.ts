@@ -8,6 +8,7 @@ export class ResumeResponseDTO {
     private currentStepOrder: number,
     private currentStepStatus: StepStatusEnum,
     private isCompleted: boolean,
+    private extraData: string,
   ) {}
 
   toGrpcMessage() {
@@ -20,6 +21,7 @@ export class ResumeResponseDTO {
           name: this.currentStep,
           order: this.currentStepOrder,
           status: this.currentStepStatus,
+          extra: this.extraData,
         },
         isCompleted: this.isCompleted,
       },

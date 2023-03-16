@@ -1,0 +1,1 @@
+{"version":3,"file":"start-response.dto.js","sourceRoot":"","sources":["../../../src/onboarding/dto/start-response.dto.ts"],"names":[],"mappings":";;;AAEA;IACE,0BAAoB,UAAkB;QAAlB,eAAU,GAAV,UAAU,CAAQ;IAAG,CAAC;IAE1C,wCAAa,GAAb;QACE,OAAO;YACL,UAAU,EAAE,IAAI,CAAC,UAAU;SACX,CAAC;IACrB,CAAC;IACH,uBAAC;AAAD,CAAC,AARD,IAQC;AARY,4CAAgB"}

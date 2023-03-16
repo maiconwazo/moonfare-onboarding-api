@@ -17,13 +17,13 @@ export class OnboardingController implements OnboardingServiceController {
 
   @GrpcMethod('OnboardingService', 'Start')
   async start(): Promise<OnboardingResponse> {
-    const result = await this.onboardingService.start();
+    const result = await this.onboardingService.startAsync();
     return result.toGrpcMessage();
   }
 
   @GrpcMethod('OnboardingService', 'Resume')
   async resume(_: Empty, metadata?: Metadata): Promise<OnboardingResponse> {
-    const instanceId = metadata.toJSON().instanceid.toString();
+    const instanceId = metadata.toJSON().instanceid?.toString();
 
     if (!instanceId || instanceId === 'undefined')
       throw new InstanceIdMissingException();
@@ -37,7 +37,7 @@ export class OnboardingController implements OnboardingServiceController {
     request: OnboardingRequest,
     metadata?: Metadata,
   ): Promise<OnboardingResponse> {
-    const instanceId = metadata.toJSON().instanceid.toString();
+    const instanceId = metadata.toJSON().instanceid?.toString();
 
     if (!instanceId || instanceId === 'undefined')
       throw new InstanceIdMissingException();
@@ -51,7 +51,7 @@ export class OnboardingController implements OnboardingServiceController {
 
   @GrpcMethod('OnboardingService', 'Rollback')
   async rollback(_: Empty, metadata?: Metadata): Promise<OnboardingResponse> {
-    const instanceId = metadata.toJSON().instanceid.toString();
+    const instanceId = metadata.toJSON().instanceid?.toString();
 
     if (!instanceId || instanceId === 'undefined')
       throw new InstanceIdMissingException();
@@ -62,7 +62,7 @@ export class OnboardingController implements OnboardingServiceController {
 
   @GrpcMethod('OnboardingService', 'Delete')
   async delete(_: Empty, metadata?: Metadata): Promise<OnboardingResponse> {
-    const instanceId = metadata.toJSON().instanceid.toString();
+    const instanceId = metadata.toJSON().instanceid?.toString();
 
     if (!instanceId || instanceId === 'undefined')
       throw new InstanceIdMissingException();
@@ -73,7 +73,7 @@ export class OnboardingController implements OnboardingServiceController {
 
   @GrpcMethod('OnboardingService', 'GetInformation')
   async getInformation(): Promise<OnboardingInformationResponse> {
-    const result = await this.onboardingService.getInformation();
+    const result = await this.onboardingService.getInformationAsync();
     return result.toGrpcMessage();
   }
 }
