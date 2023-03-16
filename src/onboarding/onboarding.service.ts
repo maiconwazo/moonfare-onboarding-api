@@ -162,6 +162,7 @@ export class OnboardingService {
     if (pendingInstanceStep) {
       switch (pendingInstanceStep.flowStep.name) {
         case 'document':
+          pendingInstanceStep.updatedAt = new Date();
           pendingInstanceStep.data = input;
           pendingInstanceStep.status = StepStatusEnum.processing;
           await this.instanceRepository.save(instance);
@@ -199,6 +200,7 @@ export class OnboardingService {
             accessCode: body.accessCode,
             hash: result,
           });
+          pendingInstanceStep.updatedAt = new Date();
           pendingInstanceStep.data = JSON.stringify({});
           pendingInstanceStep.status = StepStatusEnum.completed;
           await this.instanceRepository.save(instance);
@@ -206,6 +208,7 @@ export class OnboardingService {
         }
 
         default:
+          pendingInstanceStep.updatedAt = new Date();
           pendingInstanceStep.data = input;
           pendingInstanceStep.status = StepStatusEnum.completed;
           await this.instanceRepository.save(instance);
@@ -263,6 +266,8 @@ export class OnboardingService {
 
     const lastStep =
       sortedCompletedInstanceSteps[sortedCompletedInstanceSteps.length - 1];
+
+    lastStep.updatedAt = new Date();
     lastStep.status = StepStatusEnum.started;
 
     await this.instanceRepository.save(instance);
